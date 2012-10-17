@@ -1,7 +1,6 @@
-
 # Example Setup
 
-```
+```php
 <?php
 use \TYPO3\Surf\Domain\Model\Workflow;
 use \TYPO3\Surf\Domain\Model\Node;
