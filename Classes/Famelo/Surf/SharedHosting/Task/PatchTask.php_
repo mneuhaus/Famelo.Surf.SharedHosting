@@ -1,0 +1,181 @@
+<?php
+namespace Famelo\Surf\SharedHosting\Task;
+
+/*                                                                        *
+ * This script belongs to the FLOW3 package "TYPO3.Surf".                 *
+ *                                                                        *
+ *                                                                        */
+
+use TYPO3\Surf\Domain\Model\Node;
+use TYPO3\Surf\Domain\Model\Application;
+use TYPO3\Surf\Domain\Model\Deployment;
+
+use TYPO3\Flow\Annotations as Flow;
+
+/**
+ * A task for copying local configuration to the application
+ *
+ * The configuration directory has to exist on the target release path before
+ * executing this task!
+ */
+class PatchTask extends \TYPO3\Surf\Domain\Model\Task {
+
+	/**
+	 * @Flow\Inject
+	 * @var \TYPO3\Surf\Domain\Service\ShellCommandService
+	 */
+	protected $shell;
+
+	/**
+	 * @var \TYPO3\Flow\Package\PackageManagerInterface
+	 * @Flow\Inject
+	 */
+	protected $packageManager;
+
+	/**
+	 * Executes this task
+	 *
+	 * @param \TYPO3\Surf\Domain\Model\Node $node
+	 * @param \TYPO3\Surf\Domain\Model\Application $application
+	 * @param \TYPO3\Surf\Domain\Model\Deployment $deployment
+	 * @param array $options
+	 * @return void
+	 * @throws \TYPO3\Surf\Exception\TaskExecutionException
+	 */
+	public function execute(Node $node, Application $application, Deployment $deployment, array $options = array()) {
+		$this->hosting = $application->getOption('hosting');
+		$this->username = $options['username'];
+		$this->hostname = $node->getHostname();
+		$this->deployment = $deployment;
+
+		$this->resourcePath = $this->packageManager->getPackage('Famelo.Surf.SharedHosting')->getResourcesPath() . 'Private/' . $this->hosting;
+
+		$this->temporaryPath = FLOW_PATH_ROOT . '/Data/Temporary/Deployment/' . $this->hosting;
+		\TYPO3\Flow\Utility\Files::createDirectoryRecursively($this->temporaryPath);
+
+		$this->patchComposer($node, $application, $deployment, $options);
+		$this->patchSettings($node, $application, $deployment, $options);
+		$this->patchFlow($node, $application, $deployment, $options);
+	}
+
+	/**
+	 * Simulate this task
+	 *
+	 * @param Node $node
+	 * @param Application $application
+	 * @param Deployment $deployment
+	 * @param array $options
+	 * @return void
+	 */
+	public function simulate(Node $node, Application $application, Deployment $deployment, array $options = array()) {
+		$this->execute($node, $application, $deployment, $options);
+	}
+
+	public function copy($source, $destination) {
+		$localhost = new Node('localhost');
+		$localhost->setHostname('localhost');
+
+		$this->shell->executeOrSimulate(array(
+			'scp ' . $source . ' ' . $this->username . '@' . $this->hostname . ':' . $destination
+		), $localhost, $this->deployment);
+	}
+
+	/**
+	 * Adjust the composer path
+	 *
+	 * @param \TYPO3\Surf\Domain\Model\Node $node
+	 * @param \TYPO3\Surf\Domain\Model\Application $application
+	 * @param \TYPO3\Surf\Domain\Model\Deployment $deployment
+	 * @param array $options
+	 * @return void
+	 * @throws \TYPO3\Surf\Exception\TaskExecutionException
+	 */
+	protected function patchComposer(Node $node, Application $application, Deployment $deployment, array $options = array()) {
+		$settings = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($this->resourcePath . '/Settings.yaml'));
+
+		if (isset($settings['TYPO3']['Flow']['core']['phpBinaryPathAndFilename'])) {
+			$phpPath = $settings['TYPO3']['Flow']['core']['phpBinaryPathAndFilename'];
+			$composerCommandPath = $application->getOption('composerCommandPath');
+			if (pathinfo($composerCommandPath, PATHINFO_EXTENSION) == 'phar') {
+				$application->setOption('composerCommandPath', $phpPath . ' ' . $composerCommandPath);
+			}
+		}
+
+	}
+
+	/**
+	 * Adjust the composer path
+	 *
+	 * @param \TYPO3\Surf\Domain\Model\Node $node
+	 * @param \TYPO3\Surf\Domain\Model\Application $application
+	 * @param \TYPO3\Surf\Domain\Model\Deployment $deployment
+	 * @param array $options
+	 * @return void
+	 * @throws \TYPO3\Surf\Exception\TaskExecutionException
+	 */
+	protected function patchDefaultContext(Node $node, Application $application, Deployment $deployment, array $options = array()) {
+		if ($application->hasOption('defaultContext')) {
+			$code = file_get_contents(FLOW_PATH_ROOT . '/Web/index.php');
+			$code = str_replace('\'Development\'', '\'' . $application->getOption('defaultContext') . '\'');
+
+			$source = $this->temporaryPath . '/index.php';
+			file_put_contents($source, $code);
+
+			$destination = $deployment->getApplicationReleasePath($application) . '/Web/index.php';
+
+			$this->copy($source, $destination);
+		}
+
+	}
+
+	/**
+	 * Patch the flow cli
+	 *
+	 * @param \TYPO3\Surf\Domain\Model\Node $node
+	 * @param \TYPO3\Surf\Domain\Model\Application $application
+	 * @param \TYPO3\Surf\Domain\Model\Deployment $deployment
+	 * @param array $options
+	 * @return void
+	 * @throws \TYPO3\Surf\Exception\TaskExecutionException
+	 */
+	protected function patchFlow(Node $node, Application $application, Deployment $deployment, array $options = array()) {
+		$settings = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($this->resourcePath . '/Settings.yaml'));
+		if (isset($settings['TYPO3']['Flow']['core']['phpBinaryPathAndFilename'])) {
+			$lines = file(FLOW_PATH_ROOT . '/flow');
+			$lines[0] = '#!' . $settings['TYPO3']['Flow']['core']['phpBinaryPathAndFilename'];
+
+			$source = $this->temporaryPath . '/flow';
+			file_put_contents($source, implode("\n", $lines));
+
+			$destination = $deployment->getApplicationReleasePath($application) . '/flow';
+
+			$this->copy($source, $destination);
+		}
+	}
+
+	/**
+	 * Patch the Settings
+	 *
+	 * @param \TYPO3\Surf\Domain\Model\Node $node
+	 * @param \TYPO3\Surf\Domain\Model\Application $application
+	 * @param \TYPO3\Surf\Domain\Model\Deployment $deployment
+	 * @param array $options
+	 * @return void
+	 * @throws \TYPO3\Surf\Exception\TaskExecutionException
+	 */
+	protected function patchSettings(Node $node, Application $application, Deployment $deployment, array $options = array()) {
+		$settingsPatch = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($this->resourcePath . '/Settings.yaml'));
+
+		$settings = (array) \Symfony\Component\Yaml\Yaml::parse(FLOW_PATH_ROOT . '/Configuration/Settings.yaml');
+		$settings = \TYPO3\Flow\Utility\Arrays::arrayMergeRecursiveOverrule($settings, $settingsPatch);
+
+		$patchedSettings = $this->temporaryPath . '/Settings.yaml';
+		file_put_contents($patchedSettings, \Symfony\Component\Yaml\Yaml::dump($settings, 999));
+
+		$patchedSettingsTargetPath = $deployment->getApplicationReleasePath($application) . '/Configuration/Settings.yaml';
+
+		$this->copy($patchedSettings, $patchedSettingsTargetPath);
+	}
+
+}
+?>
