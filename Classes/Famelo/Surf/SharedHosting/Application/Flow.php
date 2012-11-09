@@ -44,7 +44,8 @@ class Flow extends \TYPO3\Surf\Application\BaseApplication {
 				'typo3.surf:flow3:symlinkconfiguration',
 				'typo3.surf:flow3:copyconfiguration'
 			), $this)
-			->addTask('typo3.surf:flow3:migrate', 'migrate', $this);
+			#->addTask('typo3.surf:flow3:migrate', 'migrate', $this)
+			->addTask('famelo.surf.sharedhosting:migrate', 'migrate', $this);
 	}
 
 }

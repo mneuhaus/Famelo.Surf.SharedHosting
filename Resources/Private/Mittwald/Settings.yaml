@@ -1,0 +1,4 @@
+TYPO3:
+  Flow:
+    core:
+      phpBinaryPathAndFilename: '/usr/local/bin/php_cli'
