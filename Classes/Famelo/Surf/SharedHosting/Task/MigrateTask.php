@@ -16,7 +16,7 @@ use TYPO3\Flow\Annotations as Flow;
  * A FLOW3 migration task
  *
  */
-class MigrateTask extends \TYPO3\Surf\Task\FLOW3\MigrateTask {
+class MigrateTask extends \TYPO3\Surf\Task\TYPO3\Flow\MigrateTask {
 
 	/**
 	 * Execute this task
