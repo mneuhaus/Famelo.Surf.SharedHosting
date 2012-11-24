@@ -33,19 +33,19 @@ class Flow extends \TYPO3\Surf\Application\BaseApplication {
 		parent::registerTasks($workflow, $deployment);
 
 		$workflow
-			->addTask('typo3.surf:flow3:createdirectories', 'initialize', $this)
+			->addTask('typo3.surf:typo3:flow:createdirectories', 'initialize', $this)
 			->afterTask('typo3.surf:gitcheckout', array(
 				'famelo.surf.sharedhosting:patchcomposer',
 				'typo3.surf:composer:install',
 				'famelo.surf.sharedhosting:patchflow',
 				'famelo.surf.sharedhosting:patchsettings',
 				'famelo.surf.sharedhosting:setdefaultcontext',
-				'typo3.surf:flow3:symlinkdata',
-				'typo3.surf:flow3:symlinkconfiguration',
-				'typo3.surf:flow3:copyconfiguration'
-			), $this)
+				'typo3.surf:typo3:flow:symlinkdata',
+				'typo3.surf:typo3:flow:symlinkconfiguration',
+				'typo3.surf:typo3:flow:copyconfiguration'
+			), $this);
 			#->addTask('typo3.surf:flow3:migrate', 'migrate', $this)
-			->addTask('famelo.surf.sharedhosting:migrate', 'migrate', $this);
+			#->addTask('famelo.surf.sharedhosting:migrate', 'migrate', $this);
 	}
 
 }
