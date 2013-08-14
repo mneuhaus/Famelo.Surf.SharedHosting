@@ -13,12 +13,12 @@ use TYPO3\Surf\Domain\Model\Deployment;
  * A Flow application template
 * @TYPO3\Flow\Annotations\Proxy(false)
  */
-class Flow extends \TYPO3\Surf\Application\BaseApplication {
+class Flow extends \TYPO3\Surf\Application\TYPO3\Flow {
 
 	/**
 	 * Constructor
 	 */
-	public function __construct($name = 'Flow') {
+	public function __construct($name = 'TYPO3 Flow') {
 		parent::__construct($name);
 	}
 
@@ -33,20 +33,36 @@ class Flow extends \TYPO3\Surf\Application\BaseApplication {
 		parent::registerTasks($workflow, $deployment);
 
 		$workflow
-			->addTask('typo3.surf:typo3:flow:createdirectories', 'initialize', $this)
-			->afterTask('typo3.surf:gitcheckout', array(
-				'famelo.surf.sharedhosting:patchcomposer',
-				'typo3.surf:composer:install',
+			->beforeTask('typo3.surf:composer:install', array('typo3.surf:composer:download'))
+			->afterTask('typo3.surf:typo3:flow:copyconfiguration', array(
 				'famelo.surf.sharedhosting:patchflow',
-				'famelo.surf.sharedhosting:patchsettings',
-				'famelo.surf.sharedhosting:setdefaultcontext',
-				'typo3.surf:typo3:flow:symlinkdata',
-				'typo3.surf:typo3:flow:symlinkconfiguration',
-				'typo3.surf:typo3:flow:copyconfiguration'
+				#'famelo.surf.sharedhosting:patchsettings',
+				'famelo.surf.sharedhosting:setdefaultcontext'
 			), $this);
-			#->addTask('typo3.surf:flow3:migrate', 'migrate', $this)
-			#->addTask('famelo.surf.sharedhosting:migrate', 'migrate', $this);
 	}
 
+
+	/**
+	 * Set an option for this application instance
+	 *
+	 * @param string $key The option key
+	 * @param mixed $value The option value
+	 * @return \TYPO3\Surf\Domain\Model\Application The current instance for chaining
+	 */
+	public function setHosting($hosting) {
+		switch ($hosting) {
+			case 'DomainFactory/ManagedHosting':
+				$this->setOption('phpPath', '/usr/local/bin/php5-54LATEST-CLI');
+				$this->setOption('composerCommandPath', '/usr/local/bin/php5-54LATEST-CLI /kunden/350350_33330/composer.phar');
+				$this->setOption('composerDownloadCommand', 'curl -s https://getcomposer.org/installer | /usr/local/bin/php5-53LATEST-CLI');
+				break;
+
+			default:
+				# code...
+				break;
+		}
+		$this->setOption('hosting', $hosting);
+		return $this;
+	}
 }
 ?>
