@@ -1,4 +1,4 @@
 TYPO3:
   Flow:
     core:
-      phpBinaryPathAndFilename: '/usr/local/bin/php5-53LATEST-CLI'
+      phpBinaryPathAndFilename: '/usr/local/bin/php5-54LATEST-CLI'
