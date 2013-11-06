@@ -43,6 +43,18 @@ class SetDefaultContextTask extends BaseTask {
 			$destination = $deployment->getApplicationReleasePath($application) . '/Web/index.php';
 
 			$this->copy($source, $destination);
+
+
+
+			$code = file_get_contents(FLOW_PATH_ROOT . '/Packages/Framework/TYPO3.Flow/Scripts/flow.php');
+			$code = str_replace('\'Development\'', '\'' . $application->getOption('defaultContext') . '\'', $code);
+
+			$source = $this->temporaryPath . '/flow.php';
+			file_put_contents($source, $code);
+
+			$destination = $deployment->getApplicationReleasePath($application) . '/Packages/Framework/TYPO3.Flow/Scripts/flow.php';
+
+			$this->copy($source, $destination);
 		}
 	}
 
