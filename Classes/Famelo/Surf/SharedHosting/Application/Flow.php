@@ -30,15 +30,14 @@ class Flow extends \TYPO3\Surf\Application\TYPO3\Flow {
 	 * @return void
 	 */
 	public function registerTasks(Workflow $workflow, Deployment $deployment) {
-		parent::registerTasks($workflow, $deployment);
-
 		$workflow
-			->beforeTask('typo3.surf:composer:install', array('typo3.surf:composer:download'))
-			->afterTask('typo3.surf:typo3:flow:copyconfiguration', array(
+			// ->beforeTask('typo3.surf:composer:install', array('typo3.surf:composer:download'))
+			->addTask(array(
 				'famelo.surf.sharedhosting:patchflow',
 				'famelo.surf.sharedhosting:patchsettings',
 				'famelo.surf.sharedhosting:setdefaultcontext'
-			), $this);
+			), 'update');
+		parent::registerTasks($workflow, $deployment);
 	}
 
 
@@ -57,11 +56,10 @@ class Flow extends \TYPO3\Surf\Application\TYPO3\Flow {
 				$this->setOption('composerDownloadCommand', 'curl -s https://getcomposer.org/installer | /usr/local/bin/php5-53LATEST-CLI');
 				break;
 
-
 			case 'Mittwald':
 				$this->setOption('phpPath', '/usr/local/bin/php_cli');
-				$this->setOption('composerCommandPath', '/usr/local/bin/php_cli ' . $this->getOption('composerCommandPath'));
-				$this->setOption('composerDownloadCommand', 'curl -s https://getcomposer.org/installer | /usr/local/bin/php_cli');
+				#$this->setOption('composerCommandPath', '/usr/local/bin/php_cli ' . $this->getOption('composerCommandPath'));
+				#$this->setOption('composerDownloadCommand', 'curl -s https://getcomposer.org/installer | /usr/local/bin/php_cli');
 				break;
 
 			default:

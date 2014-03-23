@@ -1,0 +1,7 @@
+Famelo:
+  Surf:
+    SharedHosting:
+      templates:
+        Mittwald:
+          htmlBase: /html/
+          resources: resource://Famelo.Surf.SharedHosting/Private/Mittwald/

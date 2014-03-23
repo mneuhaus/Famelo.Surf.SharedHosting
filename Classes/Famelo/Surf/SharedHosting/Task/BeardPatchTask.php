@@ -32,12 +32,17 @@ class BeardPatchTask extends \TYPO3\Surf\Domain\Model\Task {
 	 * @return void
 	 */
 	public function execute(Node $node, Application $application, Deployment $deployment, array $options = array()) {
-		$applicationReleasePath = $deployment->getApplicationReleasePath($application);
 
+		if ($application->getOption('transferMethod') == 'rsync') {
+			$path = $deployment->getWorkspacePath($application);
+			$node = $deployment->getNode('localhost');
+			$command = 'beard patch';
+		} else {
+			$patch = $deployment->getApplicationReleasePath($application);
+			$command = $application->getOption('phpPath') . ' beard.phar patch';
+		}
 
-		$command = $application->getOption('phpPath') . ' beard.phar patch';
-
-		$command = sprintf('cd %s && %s', escapeshellarg($applicationReleasePath), $command);
+		$command = sprintf('cd %s && %s', escapeshellarg($path), $command);
 		$this->shell->executeOrSimulate($command, $node, $deployment);
 	}
 }
