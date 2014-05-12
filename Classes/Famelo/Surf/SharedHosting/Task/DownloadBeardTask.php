@@ -34,7 +34,7 @@ class DownloadBeardTask extends \TYPO3\Surf\Domain\Model\Task {
 	public function execute(Node $node, Application $application, Deployment $deployment, array $options = array()) {
 		$applicationReleasePath = $deployment->getApplicationReleasePath($application);
 
-		$command = 'curl -s https://raw.github.com/mneuhaus/Beard-Versions/master/beard-current.phar > beard.phar';
+		$command = 'curl -sL https://raw.github.com/mneuhaus/Beard-Versions/master/beard-current.phar > beard.phar';
 
 		$command = sprintf('cd %s && %s && chmod +x beard.phar', escapeshellarg($applicationReleasePath), $command);
 		$this->shell->executeOrSimulate($command, $node, $deployment);
