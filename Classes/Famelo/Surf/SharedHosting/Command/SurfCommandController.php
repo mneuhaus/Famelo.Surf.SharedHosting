@@ -128,14 +128,21 @@ class SurfCommandController extends AbstractInteractiveCommandController {
 	}
 
 	public function chooseDirectory() {
-		$output = trim(shell_exec('ssh ' . $this->user . '@' . $this->host . ' "ls -d ' . $this->template['htmlBase'] . '/*/"'));
+		$output = trim(shell_exec('ssh ' . $this->user . '@' . $this->host . ' "ls -d ' . $this->template['htmlBase'] . '*/"'));
 		$directories = explode(chr(10), $output);
+		$directories['new'] = 'new directory';
 		$directoryIndex = $this->select('<info>Please select the target Directory</info>', $directories);
-		return $directory = $directories[$directoryIndex];
+		if ($directoryIndex == 'new') {
+			$directory = $this->template['htmlBase'] . $this->ask('<info>Please enter the name of the directory to create inside "' . $this->template['htmlBase'] . '": </info>') . '/';
+			$this->sshCommand('mkdir -p ' . $directory);
+		} else {
+			$directory = $directories[$directoryIndex];
+		}
+		return $directory;
 	}
 
 	public function createStructure() {
-		$this->sshCommand('mv ' . $this->directory . '/Configuration/Settings.yaml ' . $this->directory . '../Settings.yaml');
+		// $this->sshCommand('mv ' . $this->directory . '/Configuration/Settings.yaml ' . $this->directory . '../Settings.yaml');
 		$output = $this->sshCommand('rm -rf ' . $this->directory . '*');
 		$output = $this->sshCommand('mkdir -p ' . $this->directory . 'shared/Configuration/Production');
 		$this->sshCommand('cp ' . $this->directory . '../Settings.yaml ' . $this->directory . '/shared/Configuration/Production/Settings.yaml ');
