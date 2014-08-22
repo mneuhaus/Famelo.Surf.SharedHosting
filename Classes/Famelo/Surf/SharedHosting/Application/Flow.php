@@ -37,7 +37,13 @@ class Flow extends \TYPO3\Surf\Application\TYPO3\Flow {
 				'famelo.surf.sharedhosting:patchsettings',
 				'famelo.surf.sharedhosting:setdefaultcontext'
 			), 'update');
+
 		parent::registerTasks($workflow, $deployment);
+
+		$workflow->afterStage('update', array(
+			'famelo.surf.sharedhosting:symlinkconfiguration'
+		), $this);
+		$workflow->removeTask('typo3.surf:typo3:flow:symlinkconfiguration');
 	}
 
 
