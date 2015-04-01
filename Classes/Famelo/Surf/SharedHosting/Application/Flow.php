@@ -40,6 +40,10 @@ class Flow extends \TYPO3\Surf\Application\TYPO3\Flow {
 
 		parent::registerTasks($workflow, $deployment);
 
+		$workflow->beforeTask('typo3.surf:transfer:rsync', array(
+			'famelo.surf.sharedhosting:beardpatch'
+		), $this);
+
 		$workflow->afterStage('update', array(
 			'famelo.surf.sharedhosting:symlinkconfiguration'
 		), $this);
