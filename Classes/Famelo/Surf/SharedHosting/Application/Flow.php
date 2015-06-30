@@ -72,6 +72,12 @@ class Flow extends \TYPO3\Surf\Application\TYPO3\Flow {
 				#$this->setOption('composerDownloadCommand', 'curl -s https://getcomposer.org/installer | /usr/local/bin/php_cli');
 				break;
 
+			case 'Hosteurope/Webserver':
+				$this->setOption('phpPath', '/usr/bin/php5.4');
+				$this->setOption('composerCommandPath', '/usr/bin/php5.4 ' . $this->getOption('composerCommandPath'));
+				$this->setOption('composerDownloadCommand', 'curl -s https://getcomposer.org/installer | /usr/bin/php5.4');
+				break;
+
 			default:
 				# code...
 				break;
